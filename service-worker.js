@@ -1,4 +1,4 @@
-const CACHE_NAME = "orbit-merge-v13";
+const CACHE_NAME = "orbit-merge-v16";
 const FILES = [
   "./", "index.html", "home.css", "home-audio.js", "history.js", "game.html", "style.css", "game.js",
   "manifest.webmanifest", "assets/icon.svg",

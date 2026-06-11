@@ -18,6 +18,9 @@ const endGameButton = document.getElementById("endGameButton");
 const countdownOverlay = document.getElementById("countdownOverlay");
 const countdownNumber = document.getElementById("countdownNumber");
 const gameOverTitle = document.getElementById("gameOverTitle");
+const sensitivitySelect = document.getElementById("sensitivitySelect");
+const encouragementOverlay = document.getElementById("encouragementOverlay");
+const encouragementText = document.getElementById("encouragementText");
 
 const requestedLevel = new URLSearchParams(window.location.search).get("level");
 const levelKey = ["beauty", "handsome"].includes(requestedLevel) ? requestedLevel : "happiness";
@@ -39,7 +42,7 @@ const FLOOR = HEIGHT - 18;
 const DANGER_Y = 142;
 const GRAVITY = 0.029;
 const AIR = 0.998;
-const BOUNCE = 0.3;
+const BOUNCE = 0;
 const DROP_INTERVAL = 2400;
 
 const LEVELS = [
@@ -78,6 +81,22 @@ let paused = false;
 let countingDown = false;
 let historySaved = false;
 let pausedAt = 0;
+let sensitivity = Number(localStorage.getItem("orbitMergeSensitivity") || 1);
+let lastEncouragement = -1;
+
+const ENCOURAGEMENTS = [
+  "太棒了，继续闪闪发光！",
+  "厉害！幸福又长大了一点！",
+  "完美合成，你真的很优秀！",
+  "好样的，离最高分更近啦！",
+  "这一球太漂亮了！",
+  "坚持住，你一定可以！",
+  "超强发挥，为你鼓掌！",
+  "又完成一个大目标！"
+];
+
+if (![0.5, 0.75, 1, 1.5, 2].includes(sensitivity)) sensitivity = 1;
+sensitivitySelect.value = String(sensitivity);
 
 bestScoreEl.textContent = bestScore;
 
@@ -173,6 +192,7 @@ function update() {
     if (ball.level !== LEVELS.length - 1 || now - ball.spawnedAt < 900) return true;
     burst(ball.x, ball.y, LEVELS[ball.level].color);
     playFingerSnap();
+    showEncouragement();
     if (activeBall === ball) activeBall = null;
     return false;
   });
@@ -180,8 +200,10 @@ function update() {
   for (const ball of balls) {
     if (ball === activeBall && pointerHeld && performance.now() - ball.spawnedAt < DROP_INTERVAL - 250 && ball.y < HEIGHT - 150) {
       const targetX = Math.max(ball.radius, Math.min(WIDTH - ball.radius, aimX));
-      ball.vx += Math.max(-0.21, Math.min(0.21, (targetX - ball.x) * 0.009));
-      ball.vx = Math.max(-2.1, Math.min(2.1, ball.vx));
+      const acceleration = 0.42 * sensitivity;
+      const maxSpeed = 4.2 * sensitivity;
+      ball.vx += Math.max(-acceleration, Math.min(acceleration, (targetX - ball.x) * 0.018 * sensitivity));
+      ball.vx = Math.max(-maxSpeed, Math.min(maxSpeed, ball.vx));
     }
     ball.vy += GRAVITY;
     ball.vx *= AIR;
@@ -213,6 +235,18 @@ function update() {
   });
   particles = particles.filter(p => p.life > 0);
   checkDanger();
+}
+
+function showEncouragement() {
+  let index = Math.floor(Math.random() * ENCOURAGEMENTS.length);
+  if (ENCOURAGEMENTS.length > 1 && index === lastEncouragement) {
+    index = (index + 1 + Math.floor(Math.random() * (ENCOURAGEMENTS.length - 1))) % ENCOURAGEMENTS.length;
+  }
+  lastEncouragement = index;
+  encouragementText.textContent = ENCOURAGEMENTS[index];
+  encouragementOverlay.classList.remove("show");
+  void encouragementOverlay.offsetWidth;
+  encouragementOverlay.classList.add("show");
 }
 
 function solveCollisions() {
@@ -258,7 +292,7 @@ function solveCollisions() {
       const relativeVelocity = (b.vx - a.vx) * nx + (b.vy - a.vy) * ny;
       if (relativeVelocity < 0) {
         if (Math.abs(relativeVelocity) > 0.45) playMetalHit(Math.abs(relativeVelocity));
-        const impulse = -(1 + 0.22) * relativeVelocity / (1 / massA + 1 / massB);
+        const impulse = -relativeVelocity / (1 / massA + 1 / massB);
         a.vx -= impulse * nx / massA;
         a.vy -= impulse * ny / massA;
         b.vx += impulse * nx / massB;
@@ -276,7 +310,7 @@ function mergeBalls(i, j, a, b) {
   const y = (a.y + b.y) / 2;
   const merged = new Ball(x, y, level);
   merged.vx = (a.vx + b.vx) * 0.35;
-  merged.vy = Math.min(-1.1, (a.vy + b.vy) * 0.1 - 0.6);
+  merged.vy = Math.max(0, (a.vy + b.vy) * 0.05);
   balls.splice(j, 1);
   balls.splice(i, 1);
   balls.push(merged);
@@ -601,6 +635,10 @@ document.getElementById("restartButton").addEventListener("click", preparePlayer
 pauseButton.addEventListener("click", pauseGame);
 resumeButton.addEventListener("click", resumeGame);
 endGameButton.addEventListener("click", () => endGame(true));
+sensitivitySelect.addEventListener("change", () => {
+  sensitivity = Number(sensitivitySelect.value);
+  localStorage.setItem("orbitMergeSensitivity", String(sensitivity));
+});
 soundButton.addEventListener("click", () => {
   soundEnabled = !soundEnabled;
   soundButton.textContent = soundEnabled ? "音效 开" : "音效 关";

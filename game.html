@@ -43,6 +43,16 @@
       <button id="pauseButton" type="button">暂停</button>
       <button id="resumeButton" type="button" disabled>继续</button>
       <button id="endGameButton" class="danger-button" type="button">结束游戏</button>
+      <label class="sensitivity-setting">
+        <span>灵敏度</span>
+        <select id="sensitivitySelect" aria-label="选择操控灵敏度">
+          <option value="0.5">0.5</option>
+          <option value="0.75">0.75</option>
+          <option value="1" selected>1.0</option>
+          <option value="1.5">1.5</option>
+          <option value="2">2.0</option>
+        </select>
+      </label>
     </div>
 
     <section class="canvas-wrap">
@@ -50,6 +60,11 @@
       <div id="countdownOverlay" class="countdown-overlay" aria-live="assertive">
         <strong id="countdownNumber">3</strong>
         <span>准备继续</span>
+      </div>
+      <div id="encouragementOverlay" class="encouragement-overlay" aria-live="polite">
+        <span class="encouragement-spark">✦</span>
+        <strong id="encouragementText">你做得真棒！</strong>
+        <span class="encouragement-spark">✦</span>
       </div>
       <div id="startOverlay" class="overlay visible">
         <div class="overlay-card">
